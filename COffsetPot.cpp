@@ -1,16 +1,26 @@
 #include "CAutoPot.h"
+#include "math.h"
 
-
-COffsetPot::COffsetPot(int csPin, int sensorPin, int samples, int lowThreshold, int highThreshold)
-  : CAutoPot(csPin, sensorPin, samples), _lowThreshold(lowThreshold), _highThreshold(highThreshold) {
+COffsetPot::COffsetPot(int csPin, int sensorPin, int samples, int targetValue, int tolerance)
+  : CAutoPot(csPin, sensorPin, samples), _targetValue(targetValue), _tolerance(tolerance) {
 }
 
 void COffsetPot::update() {
-  _readSensor();
+    // Get a new, stable sensor reading.
+    _readSensor();
 
-  inZone = (_lastSensorValue > _lowThreshold && _lastSensorValue < _highThreshold);
+    // Calculate the error: how far are we from our target?
+    int error = _lastSensorValue - _targetValue;
 
-  if (_lastSensorValue > _highThreshold) _offsetLevel( 1); 
-  else
-  if (_lastSensorValue <  _lowThreshold) _offsetLevel(-1);
+    // Update the inZone flag. We are "in zone" if the error is within our tolerance.
+    inZone = (abs(error) <= _tolerance);
+
+    // If we are outside the tolerance window, apply a correction.
+    if (!inZone) {
+        // The relationship between the offset pot and sensor reading is typically inverse.
+        // Increasing the pot's wiper value might decrease the sensor voltage.
+        // We use a gain direction of -1 to account for this.
+        // If the relationship is direct, this should be +1.
+        _adjustLevel(error, +1);
+    }
 }

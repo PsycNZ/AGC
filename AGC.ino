@@ -10,12 +10,17 @@ Timer          timer;
 Hardware HW(&CS, &PP, &BUT, &LED, &timer);
 
 // Parameter order; ChipSelect,ProbePoint,Window,LowThresh,HighThresh
-COffsetPot offsetPot1(CS.offset1, PP.primaryOffset,  50, 324, 700);
-COffsetPot offsetPot2(CS.offset2, PP.preGain      , 100, 324, 700);
-CGainPot   gainPot   (CS.gain,    PP.preGain      ,  10          );
+// Target the middle of the 10-bit ADC (511) with a tolerance of +/- 25 counts.
+COffsetPot offsetPot1(CS.offset1, PP.primaryOffset,  50, 511, 25);
+COffsetPot offsetPot2(CS.offset2, PP.preGain      , 100, 511, 25);
+
+// This line remains the same as its constructor signature did not change.
+CGainPot   gainPot   (CS.gain,    PP.preGain      ,  10);
 
 void setup() {
   HW.init();
+  offsetPot1.setAggression(0.02f); // Make this pot react more aggressively
+  gainPot.setAggression(0.005f);  // Make the gain pot more gentle
 
   offsetPot1.begin(127);
   offsetPot2.begin(127);
